@@ -10,6 +10,15 @@ a pinned notice board and automatic email updates.
 **Live API:** https://societyhub-backend-1rn8.onrender.com (docs at `/docs`)
 **Repository:** https://github.com/SHREEYA005/SocietyHub
 
+## Demo Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | `admin@societyhub.dev` | `AdminPass123!` |
+| Resident | `arjun.mehta@societyhub.dev` | `ResidentPass123!` |
+| Resident | `kavya.iyer@societyhub.dev` | `ResidentPass123!` |
+| Resident | `rahul.sharma@societyhub.dev` | `ResidentPass123!` |
+
 ## Product Overview
 
 Two roles, two focused experiences:
@@ -47,12 +56,13 @@ Two roles, two focused experiences:
 
 ## Architecture
 
+```
 Vercel (React/TS) ──HTTPS/JSON──▶ Render (FastAPI, JWT-authenticated REST API)
-│
-├── SQLAlchemy ORM ──▶ Render PostgreSQL
-├── local disk storage (uploads/)
-└── SMTP email (or console log if unconfigured)
-
+                                        │
+                                        ├── SQLAlchemy ORM ──▶ Render PostgreSQL
+                                        ├── local disk storage (uploads/)
+                                        └── SMTP email (or console log if unconfigured)
+```
 
 See `docs/system-design.md` for the reasoning behind the complaint
 history model, overdue detection, photo handling, and notification flow.
@@ -67,36 +77,37 @@ history model, overdue detection, photo handling, and notification flow.
 
 ## Project Structure
 
+```
 society-maintenance-tracker/
 ├── backend/
-│ ├── app/
-│ │ ├── main.py # app entrypoint, CORS, error handlers
-│ │ ├── config.py # env-driven settings
-│ │ ├── database.py # SQLAlchemy engine/session
-│ │ ├── models.py # User, Complaint, ComplaintHistory, Notice
-│ │ ├── schemas.py # Pydantic request/response models
-│ │ ├── auth.py / deps.py # JWT + auth dependencies
-│ │ ├── routers/ # auth, complaints, admin, notices
-│ │ ├── services/ # overdue.py, storage.py, email_service.py
-│ │ └── seed.py # demo data
-│ ├── tests/ # pytest suite
-│ ├── requirements.txt
-│ ├── runtime.txt # pins Python 3.12.10 for Render
-│ └── .env.example
+│   ├── app/
+│   │   ├── main.py            # app entrypoint, CORS, error handlers
+│   │   ├── config.py          # env-driven settings
+│   │   ├── database.py        # SQLAlchemy engine/session
+│   │   ├── models.py          # User, Complaint, ComplaintHistory, Notice
+│   │   ├── schemas.py         # Pydantic request/response models
+│   │   ├── auth.py / deps.py  # JWT + auth dependencies
+│   │   ├── routers/           # auth, complaints, admin, notices
+│   │   ├── services/          # overdue.py, storage.py, email_service.py
+│   │   └── seed.py            # demo data
+│   ├── tests/                 # pytest suite
+│   ├── requirements.txt
+│   ├── runtime.txt            # pins Python 3.12.10 for Render
+│   └── .env.example
 ├── frontend/
-│ ├── src/
-│ │ ├── pages/ # Login, Register, dashboards, complaint pages...
-│ │ ├── components/ # Navbar, StatusBadge, PriorityBadge, Timeline...
-│ │ └── lib/ # api client, types, AuthContext
-│ ├── vercel.json # SPA rewrite rule for client-side routing
-│ ├── package.json
-│ └── .env.example
+│   ├── src/
+│   │   ├── pages/              # Login, Register, dashboards, complaint pages...
+│   │   ├── components/         # Navbar, StatusBadge, PriorityBadge, Timeline...
+│   │   └── lib/                # api client, types, AuthContext
+│   ├── vercel.json             # SPA rewrite rule for client-side routing
+│   ├── package.json
+│   └── .env.example
 ├── docs/
-│ ├── system-design.md # ≤800 words, required design write-up
-│ ├── api-documentation.md
-│ └── database-schema.md # includes Mermaid ER diagram
+│   ├── system-design.md        # ≤800 words, required design write-up
+│   ├── api-documentation.md
+│   └── database-schema.md      # includes Mermaid ER diagram
 └── README.md
-
+```
 
 ## Database Schema
 
@@ -109,7 +120,7 @@ JWT bearer tokens, issued on register/login, expiring after
 is embedded in the token and re-checked server-side on every protected
 route — the frontend hiding admin links is a UX convenience, not the
 security boundary. There is no public admin-signup endpoint; the seeded
-admin account is created by `app/seed.py` (see Demo Credentials below).
+admin account is created by `app/seed.py` (see Demo Credentials above).
 
 ## API Documentation
 
@@ -168,17 +179,6 @@ overdue"), empty-list states, and invalid photo uploads.
 one admin, three residents, six complaints spanning every status and
 priority (including overdue examples with backdated timestamps and full
 history), and four notices (two marked important).
-
-## Demo Credentials
-
-Live app: https://society-hub-iota.vercel.app
-
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@societyhub.dev` | `AdminPass123!` |
-| Resident | `arjun.mehta@societyhub.dev` | `ResidentPass123!` |
-| Resident | `kavya.iyer@societyhub.dev` | `ResidentPass123!` |
-| Resident | `rahul.sharma@societyhub.dev` | `ResidentPass123!` |
 
 ## Deployment
 
