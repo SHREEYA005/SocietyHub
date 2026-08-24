@@ -6,6 +6,10 @@ admins triage by category/status/priority/date, catch overdue issues
 before residents have to chase them, and keep everyone informed through
 a pinned notice board and automatic email updates.
 
+**Live app:** https://society-hub-iota.vercel.app
+**Live API:** https://societyhub-backend-1rn8.onrender.com (docs at `/docs`)
+**Repository:** https://github.com/SHREEYA005/SocietyHub
+
 ## Product Overview
 
 Two roles, two focused experiences:
@@ -43,58 +47,56 @@ Two roles, two focused experiences:
 
 ## Architecture
 
-```
-Browser (React/TS) ──HTTP/JSON──▶ FastAPI (JWT-authenticated REST API)
-                                        │
-                                        ├── SQLAlchemy ORM ──▶ SQLite (dev) / PostgreSQL (prod)
-                                        ├── local disk storage (uploads/, swappable)
-                                        └── SMTP email (or console log if unconfigured)
-```
+Vercel (React/TS) ──HTTPS/JSON──▶ Render (FastAPI, JWT-authenticated REST API)
+│
+├── SQLAlchemy ORM ──▶ Render PostgreSQL
+├── local disk storage (uploads/)
+└── SMTP email (or console log if unconfigured)
+
 
 See `docs/system-design.md` for the reasoning behind the complaint
 history model, overdue detection, photo handling, and notification flow.
 
 ## Tech Stack
 
-- **Frontend**: React 18, TypeScript, Vite, React Router — no CSS
-  framework, hand-written CSS for a small, controllable bundle
-- **Backend**: FastAPI, Pydantic v2, SQLAlchemy 2.0
-- **Database**: SQLite by default (zero setup); PostgreSQL via
-  `DATABASE_URL` in production
+- **Frontend**: React 18, TypeScript, Vite, React Router — deployed on Vercel
+- **Backend**: FastAPI, Pydantic v2, SQLAlchemy 2.0 — deployed on Render
+- **Database**: PostgreSQL (Render managed instance) in production; SQLite for local dev
 - **Auth**: JWT (python-jose) + bcrypt password hashing (passlib)
 - **Tests**: pytest + FastAPI's `TestClient`
 
 ## Project Structure
 
-```
 society-maintenance-tracker/
 ├── backend/
-│   ├── app/
-│   │   ├── main.py            # app entrypoint, CORS, error handlers
-│   │   ├── config.py          # env-driven settings
-│   │   ├── database.py        # SQLAlchemy engine/session
-│   │   ├── models.py          # User, Complaint, ComplaintHistory, Notice
-│   │   ├── schemas.py         # Pydantic request/response models
-│   │   ├── auth.py / deps.py  # JWT + auth dependencies
-│   │   ├── routers/           # auth, complaints, admin, notices
-│   │   ├── services/          # overdue.py, storage.py, email_service.py
-│   │   └── seed.py            # demo data
-│   ├── tests/                 # pytest suite
-│   ├── requirements.txt
-│   └── .env.example
+│ ├── app/
+│ │ ├── main.py # app entrypoint, CORS, error handlers
+│ │ ├── config.py # env-driven settings
+│ │ ├── database.py # SQLAlchemy engine/session
+│ │ ├── models.py # User, Complaint, ComplaintHistory, Notice
+│ │ ├── schemas.py # Pydantic request/response models
+│ │ ├── auth.py / deps.py # JWT + auth dependencies
+│ │ ├── routers/ # auth, complaints, admin, notices
+│ │ ├── services/ # overdue.py, storage.py, email_service.py
+│ │ └── seed.py # demo data
+│ ├── tests/ # pytest suite
+│ ├── requirements.txt
+│ ├── runtime.txt # pins Python 3.12.10 for Render
+│ └── .env.example
 ├── frontend/
-│   ├── src/
-│   │   ├── pages/              # Login, Register, dashboards, complaint pages...
-│   │   ├── components/         # Navbar, StatusBadge, PriorityBadge, Timeline...
-│   │   └── lib/                # api client, types, AuthContext
-│   ├── package.json
-│   └── .env.example
+│ ├── src/
+│ │ ├── pages/ # Login, Register, dashboards, complaint pages...
+│ │ ├── components/ # Navbar, StatusBadge, PriorityBadge, Timeline...
+│ │ └── lib/ # api client, types, AuthContext
+│ ├── vercel.json # SPA rewrite rule for client-side routing
+│ ├── package.json
+│ └── .env.example
 ├── docs/
-│   ├── system-design.md        # ≤800 words, required design write-up
-│   ├── api-documentation.md
-│   └── database-schema.md      # includes Mermaid ER diagram
+│ ├── system-design.md # ≤800 words, required design write-up
+│ ├── api-documentation.md
+│ └── database-schema.md # includes Mermaid ER diagram
 └── README.md
-```
+
 
 ## Database Schema
 
@@ -112,39 +114,31 @@ admin account is created by `app/seed.py` (see Demo Credentials below).
 ## API Documentation
 
 Full endpoint-by-endpoint reference: `docs/api-documentation.md`.
-Interactive Swagger UI: `http://localhost:8000/docs` while the backend is running.
+Interactive Swagger UI (live): https://societyhub-backend-1rn8.onrender.com/docs
 
 ## Environment Variables
-
-Copy `backend/.env.example` to `backend/.env` and `frontend/.env.example`
-to `frontend/.env`, then fill in as needed. Nothing in `.env.example`
-contains real secrets.
 
 Backend (`backend/.env.example`): `DATABASE_URL`, `JWT_SECRET`,
 `OVERDUE_THRESHOLD_DAYS`, `UPLOAD_DIR`, `MAX_UPLOAD_SIZE_MB`,
 `ALLOWED_IMAGE_TYPES`, `EMAIL_HOST`/`EMAIL_PORT`/`EMAIL_USERNAME`/
-`EMAIL_PASSWORD`/`EMAIL_FROM`/`EMAIL_USE_TLS`, `CORS_ORIGINS`.
+`EMAIL_PASSWORD`/`EMAIL_FROM`/`EMAIL_USE_TLS`, `CORS_ORIGINS`,
+`PYTHON_VERSION` (set to `3.12.10` on Render).
 
 Frontend (`frontend/.env.example`): `VITE_API_URL`.
 
 ## Local Setup
 
 ### Prerequisites
-- Python 3.11+
+- Python 3.12+
 - Node.js 18+
-
-### Database Setup
-No setup needed for local dev — SQLite is used by default and the file
-is created automatically on first run. For Postgres, create a database
-and point `DATABASE_URL` at it (SQLAlchemy handles the rest).
 
 ### Running Backend
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 cp .env.example .env
-python -m app.seed          # creates tables + demo data
+python -m app.seed          # creates tables + demo data (SQLite by default)
 uvicorn app.main:app --reload --port 8000
 ```
 Backend is now at `http://localhost:8000` (docs at `/docs`).
@@ -161,7 +155,6 @@ Frontend is now at `http://localhost:5173`.
 ### Running Tests
 ```bash
 cd backend
-pip install -r requirements.txt   # includes pytest + httpx
 pytest -v
 ```
 19 tests covering registration/login, ownership isolation, admin-only
@@ -178,6 +171,8 @@ history), and four notices (two marked important).
 
 ## Demo Credentials
 
+Live app: https://society-hub-iota.vercel.app
+
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | `admin@societyhub.dev` | `AdminPass123!` |
@@ -187,29 +182,29 @@ history), and four notices (two marked important).
 
 ## Deployment
 
-This repository is **not deployed** by default — no real database,
-SMTP, or hosting credentials exist in this environment. To deploy it
-yourself:
+This app is deployed and live:
 
-1. **Backend** → Render or Railway (free tier):
-   - New Web Service from this repo, root `backend/`
-   - Build: `pip install -r requirements.txt`
-   - Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - Add a managed Postgres instance on the same platform, set
-     `DATABASE_URL` to its connection string
-   - Set `JWT_SECRET` (long random value), `CORS_ORIGINS` to your
-     deployed frontend URL, and SMTP vars if you want real email
-2. **Frontend** → Vercel or Netlify:
-   - Root `frontend/`, build `npm run build`, output `dist/`
-   - Set `VITE_API_URL` to your deployed backend URL
-3. Run `python -m app.seed` once against the production database (via a
-   one-off shell on the host, or a temporary local connection) to load
-   demo data, or register fresh accounts through the UI.
+- **Backend**: Render Web Service (`societyhub-backend`), Python 3.12.10,
+  root directory `backend/`, connected to a Render-managed PostgreSQL
+  instance via `DATABASE_URL`. Build: `pip install -r requirements.txt`.
+  Start: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+- **Database**: Render PostgreSQL (`societyhub-db`), same region as the
+  backend (Oregon) so the internal connection string resolves.
+- **Frontend**: Vercel project (`society-hub`), root directory
+  `frontend/`, framework preset Vite, `VITE_API_URL` pointed at the
+  Render backend URL. `frontend/vercel.json` adds a SPA rewrite rule
+  (`/(.*)` → `/index.html`) so client-side routes like `/dashboard`
+  don't 404 on direct load/refresh.
+- **CORS**: the backend's `CORS_ORIGINS` env var is set to the exact
+  Vercel production URL (no trailing slash).
+
+To redeploy from scratch, see the Local Setup instructions above and
+mirror the same env vars into Render/Vercel's environment settings.
 
 ## Architecture Decisions
 
-- **SQLite by default, Postgres via one env var** — zero-friction local
-  evaluation without sacrificing a real production path.
+- **Postgres in production, SQLite for local dev** — one env var
+  (`DATABASE_URL`) is the only difference; SQLAlchemy handles the rest.
 - **Overdue computed, not stored** — see `docs/system-design.md`.
 - **Reopen is a separate endpoint, not a free status transition** — an
   intentional, auditable action rather than an accidental one.
@@ -239,6 +234,6 @@ yourself:
 
 ## Screenshots
 
-Not included in this submission — run the app locally (see Local Setup
-above) to view the resident dashboard, complaint detail/timeline, admin
-dashboard, and complaint management table directly.
+See the live app at https://society-hub-iota.vercel.app (demo
+credentials above) for the resident dashboard, complaint
+detail/timeline, admin dashboard, and complaint management table.
